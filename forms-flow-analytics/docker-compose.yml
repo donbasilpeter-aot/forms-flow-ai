@@ -2,7 +2,7 @@
 version: "3.7"
 
 x-redash-service: &redash-service
-  image: redash/redash:10.1.0.b50633
+  image: formsflow/redash:10.1.2
   depends_on:
       - postgres
       - redis
@@ -17,6 +17,7 @@ services:
       - '7000:5000'
     environment:
       REDASH_WEB_WORKERS: 4
+      REDASH_MULTI_ORG: ${REDASH_MULTI_ORG:-false}
   scheduler:
     <<: *redash-service
     command: scheduler

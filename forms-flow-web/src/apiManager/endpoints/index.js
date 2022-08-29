@@ -5,7 +5,9 @@ import {
   MT_ADMIN_BASE_URL_VERSION,
   BPM_BASE_URL_EXT,
   CUSTOM_SUBMISSION_URL,
+  DOCUMENT_SERVICE_URL
 } from "./config";
+
 import { AppConfig } from "../../config";
 
 const API = {
@@ -22,7 +24,7 @@ const API = {
   GET_ALL_APPLICATIONS_STATUS: `${WEB_BASE_URL}/application/status/list`,
   GET_PROCESS_DEFINITION: `${BPM_BASE_URL_EXT}/v1/process-definition/key/<process_key>`,
   PROCESSES_XML: `${BPM_BASE_URL_EXT}/v1/process-definition/key/<process_key>/xml`,
-  DMN_XML: `${BPM_BASE_URL_EXT}/decision-definition/key/<process_key>/xml`,
+  DMN_XML: `${BPM_BASE_URL_EXT}/v1/decision-definition/key/<process_key>/xml`,
   PROCESS_ACTIVITIES: `${BPM_BASE_URL_EXT}/v1/process-instance/<process_instance_id>/activity-instances`,
   FORM: `${WEB_BASE_URL}/form`,
   FORM_CREATION: `${WEB_BASE_URL}/form/form-create`,
@@ -52,7 +54,7 @@ const API = {
   UNPUBLISH_FORMS: `${WEB_BASE_URL}/form/<mapper id>`,
   DEPLOY_BPM: `${BPM_BASE_URL_EXT}/v1/deployment/create`,
   GET_TENANT_DATA: `${MT_ADMIN_BASE_URL}/${MT_ADMIN_BASE_URL_VERSION}/tenant`,
-  EXPORT_FORM_PDF: `${WEB_BASE_URL}/form/<form_id>/submission/<submission_id>/export/pdf`,
+  EXPORT_FORM_PDF: `${DOCUMENT_SERVICE_URL}/form/<form_id>/submission/<submission_id>/export/pdf`,
   CUSTOM_SUBMISSION: `${CUSTOM_SUBMISSION_URL}/form/<form_id>/submission`,
   PUBLIC_CUSTOM_SUBMISSION: `${CUSTOM_SUBMISSION_URL}/public/form/<form_id>/submission`,
   DRAFT_BASE: `${WEB_BASE_URL}/draft`,

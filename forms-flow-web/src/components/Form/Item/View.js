@@ -55,9 +55,10 @@ import selectApplicationCreateAPI from "./apiSelectHelper";
 import { getFormProcesses } from "../../../apiManager/services/processServices";
 import { setFormStatusLoading } from "../../../actions/processActions";
 import isEqual from "lodash/isEqual";
+import SavingLoading from "../../Loading/SavingLoading";
 
 const View = React.memo((props) => {
-  const [formStatus, setFormStatus] = useState("");
+  const [formStatus, setFormStatus] = React.useState("");
   const { t } = useTranslation();
   const lang = useSelector((state) => state.user.lang);
   const formStatusLoading = useSelector(
@@ -97,6 +98,9 @@ const View = React.memo((props) => {
 
   const [showPublicForm, setShowPublicForm] = useState("checking");
   const [poll, setPoll] = useState(DRAFT_ENABLED);
+  const [draftCreating, setDraftCreating] = useState(false);
+  const [draftSaved, setDraftSaved] = useState(false);
+
   const {
     isAuthenticated,
     submission,
@@ -170,7 +174,24 @@ const View = React.memo((props) => {
   const saveDraft = (payload) => {
     let dataChanged = !isEqual(payload.data, lastUpdatedDraft.data);
     if (draftSubmissionId && isDraftCreated) {
-      if (dataChanged) dispatch(draftUpdateMethod(payload, draftSubmissionId));
+      if (dataChanged) {
+        setDraftCreating(true);
+        dispatch(
+          draftUpdateMethod(payload, draftSubmissionId, (err) => {
+            if (!err) {
+              setTimeout(() => {
+                setDraftSaved(true);
+                setTimeout(() => {
+                  setDraftCreating(false);
+                  setDraftSaved(false);
+                }, 2000);
+              }, 3000);
+            }else{
+              setDraftCreating(false);
+            }
+          })
+        );
+      }
     }
   };
 
@@ -178,11 +199,11 @@ const View = React.memo((props) => {
    * Will create a draft application when the form is selected for entry.
    */
   useEffect(() => {
-    if (validFormId && DRAFT_ENABLED) {
+    if (validFormId && DRAFT_ENABLED && formStatus === "active") {
       let payload = getDraftReqFormat(validFormId, draftData?.data);
       dispatch(draftCreateMethod(payload, setIsDraftCreated));
     }
-  }, [validFormId]);
+  }, [validFormId, formStatus]);
 
   useEffect(() => {
     dispatch(setFormStatusLoading(true));
@@ -267,7 +288,9 @@ const View = React.memo((props) => {
   }
   return (
     <div className="container overflow-y-auto">
-      <div className="main-header">
+      
+      <div className="d-flex align-items-center justify-content-between">
+        <div className="main-header">
         <SubmissionError
           modalOpen={props.submissionError.modalOpen}
           message={props.submissionError.message}
@@ -289,6 +312,18 @@ const View = React.memo((props) => {
         ) : (
           ""
         )}
+        </div>
+        {(isPublic || formStatus === "active") && draftCreating ? (
+          <div className="d-flex w-75 justify-content-end">
+          <span className="p-2 info-background mr-2">
+          <i className="fa fa-info-circle mr-2" aria-hidden="true"></i>
+            Form which is not submitted is saved to draft
+          </span>
+          <SavingLoading text={draftSaved ? "Saved to draft" : "Saving..."} saved={draftSaved} />
+          </div>
+      ) : (
+        ""
+      )}
       </div>
       <Errors errors={errors} />
       <LoadingOverlay
@@ -353,13 +388,13 @@ const executeAuthSideEffects = (dispatch, redirectUrl) => {
 const doProcessActions = (submission, ownProps) => {
   return (dispatch, getState) => {
     const state = getState();
-    let user = state.user.userDetail;
     let form = state.form.form;
     let isAuth = state.user.isAuthenticated;
-    dispatch(resetSubmissions("submission"));
-    const data = getProcessReq(form, submission._id, "new", user);
     const tenantKey = state.tenants?.tenantId;
     const redirectUrl = MULTITENANCY_ENABLED ? `/tenant/${tenantKey}/` : `/`;
+    const origin = `${window.location.origin}${redirectUrl}`;
+    dispatch(resetSubmissions("submission"));
+    const data = getProcessReq(form, submission._id, origin);
     let draft_id = state.draft.draftSubmission?.id;
     let isDraftCreated = draft_id ? true : false;
     const applicationCreateAPI = selectApplicationCreateAPI(

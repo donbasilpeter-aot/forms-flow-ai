@@ -51,7 +51,7 @@ public class AdminRestServiceImpl implements AdminRestService {
     public Mono<ResponseEntity<AuthorizationInfo>> getFormAuthorization() throws ServletException {
 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        LOGGER.error("authentication" + authentication);
+        LOGGER.debug("authentication" + authentication);
         List<String> groups = getGroups(authentication);
         AuthorizationInfo authorizationInfo = null;
 
@@ -78,6 +78,8 @@ public class AdminRestServiceImpl implements AdminRestService {
             createAuthorization(tenantKey, adminRole, Resources.TENANT, tenantKey);
             createAuthorization(tenantKey, adminRole, Resources.DEPLOYMENT, "*");
             createAuthorization(tenantKey, adminRole, Resources.FILTER, "*");
+            createAuthorization(tenantKey, adminRole, Resources.DECISION_DEFINITION, "*");
+            createAuthorization(tenantKey, adminRole, Resources.DECISION_REQUIREMENTS_DEFINITION, "*");
         }
 
         // Client authorizations
@@ -85,6 +87,9 @@ public class AdminRestServiceImpl implements AdminRestService {
             createAuthorization(tenantKey, clientRole, Resources.PROCESS_DEFINITION, "*");
             createAuthorization(tenantKey, clientRole, Resources.PROCESS_INSTANCE, "*");
             createAuthorization(tenantKey, clientRole, Resources.TENANT, tenantKey);
+            createAuthorization(tenantKey, clientRole, Resources.AUTHORIZATION, "*");
+            createAuthorization(tenantKey, clientRole, Resources.DECISION_DEFINITION, "*");
+            createAuthorization(tenantKey, clientRole, Resources.DECISION_REQUIREMENTS_DEFINITION, "*");
         }
 
         // Designer authorizations
@@ -93,6 +98,8 @@ public class AdminRestServiceImpl implements AdminRestService {
             createAuthorization(tenantKey, designerRole, Resources.PROCESS_INSTANCE, "*");
             createAuthorization(tenantKey, designerRole, Resources.TENANT, tenantKey);
             createAuthorization(tenantKey, designerRole, Resources.DEPLOYMENT, "*");
+            createAuthorization(tenantKey, designerRole, Resources.DECISION_DEFINITION, "*");
+            createAuthorization(tenantKey, designerRole, Resources.DECISION_REQUIREMENTS_DEFINITION, "*");
         }
 
         // Reviewer authorizations
@@ -103,6 +110,9 @@ public class AdminRestServiceImpl implements AdminRestService {
             createAuthorization(tenantKey, reviewerRole, Resources.TENANT, tenantKey);
             createAuthorization(tenantKey, reviewerRole, Resources.FILTER, "*");
             createAuthorization(tenantKey, reviewerRole, Resources.USER, "*");
+            createAuthorization(tenantKey, reviewerRole, Resources.AUTHORIZATION, "*");
+            createAuthorization(tenantKey, reviewerRole, Resources.DECISION_DEFINITION, "*");
+            createAuthorization(tenantKey, reviewerRole, Resources.DECISION_REQUIREMENTS_DEFINITION, "*");
         }
         LOGGER.info("Finished creating authorizations for tenant");
     }
@@ -174,7 +184,7 @@ public class AdminRestServiceImpl implements AdminRestService {
      * @return
      */
     private Set<Authorization> getAuthorization(List<String> groups) {
-
+    	LOGGER.debug("getAuthorization>>");
         Set<Authorization> authorizationList = new HashSet<>();
 
         String[] groupIds = groups.size() > 0 ? groups.toArray(new String[0]) : new String[]{};
@@ -182,11 +192,12 @@ public class AdminRestServiceImpl implements AdminRestService {
                 .resourceType(Resources.PROCESS_DEFINITION.resourceType())
                 .hasPermission(ProcessDefinitionPermissions.CREATE_INSTANCE)
                 .groupIdIn(groupIds).list();
-
+        LOGGER.info(" authorizations {}", authorizations);
         authorizations.forEach(authorization -> {
             Authorization auth = new Authorization(authorization.getGroupId(), authorization.getUserId(), authorization.getResourceId());
             authorizationList.add(auth);
         });
+        LOGGER.debug(" authorizationList {}", authorizationList);
         return authorizationList;
     }
 

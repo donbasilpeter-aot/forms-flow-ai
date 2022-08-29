@@ -6,8 +6,14 @@ from http import HTTPStatus
 from typing import Dict
 
 from flask import current_app
+from formsflow_api_utils.exceptions import BusinessException
+from formsflow_api_utils.utils import (
+    DRAFT_APPLICATION_STATUS,
+    NEW_APPLICATION_STATUS,
+    REVIEWER_GROUP,
+)
+from formsflow_api_utils.utils.user_context import UserContext, user_context
 
-from formsflow_api.exceptions import BusinessException
 from formsflow_api.models import Application, Draft, FormProcessMapper
 from formsflow_api.schemas import (
     AggregatedApplicationSchema,
@@ -15,12 +21,6 @@ from formsflow_api.schemas import (
     FormProcessMapperSchema,
 )
 from formsflow_api.services.external import BPMService
-from formsflow_api.utils import (
-    DRAFT_APPLICATION_STATUS,
-    NEW_APPLICATION_STATUS,
-    REVIEWER_GROUP,
-)
-from formsflow_api.utils.user_context import UserContext, user_context
 
 from .form_process_mapper import FormProcessMapperService
 
@@ -32,13 +32,17 @@ class ApplicationService:  # pylint: disable=too-many-public-methods
 
     @staticmethod
     def get_start_task_payload(
-        application: Application, mapper: FormProcessMapper, form_url: str
+        application: Application,
+        mapper: FormProcessMapper,
+        form_url: str,
+        web_form_url: str,
     ) -> Dict:
         """Returns the payload for initiating the task."""
         return {
             "variables": {
                 "applicationId": {"value": application.id},
                 "formUrl": {"value": form_url},
+                "webFormUrl": {"value": web_form_url},
                 "formName": {"value": mapper.form_name},
                 "submitterName": {"value": application.created_by},
                 "submissionDate": {"value": str(application.created)},
@@ -98,8 +102,9 @@ class ApplicationService:  # pylint: disable=too-many-public-methods
         # In normal cases, it's through this else case task is being created
         else:
             form_url = data["form_url"]
+            web_form_url = data["web_form_url"]
             payload = ApplicationService.get_start_task_payload(
-                application, mapper, form_url
+                application, mapper, form_url, web_form_url
             )
             ApplicationService.start_task(mapper, payload, token, application)
         return application, HTTPStatus.CREATED
@@ -465,8 +470,12 @@ class ApplicationService:  # pylint: disable=too-many-public-methods
         if auth.has_role([REVIEWER_GROUP]) and access:
             application_count = Application.get_all_application_count()
         elif auth.has_role([REVIEWER_GROUP]) and not access:
-            application_count = Application.get_authorized_application_count(resource_list)
+            application_count = Application.get_authorized_application_count(
+                resource_list
+            )
         else:
-            application_count = Application.get_user_based_application_count(user.user_name)
+            application_count = Application.get_user_based_application_count(
+                user.user_name
+            )
         assert application_count is not None
         return application_count
